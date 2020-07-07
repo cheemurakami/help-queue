@@ -3,7 +3,7 @@ const ticketListReducer = (state = {}, action) => {
   switch (action.type) {
     case 'ADD_TICKET':
       //clone the state obj takes 3 args
-      return Object.assign({}, state, { 
+      return Object.assign({}, state, {  //<- This is the new masterTicketList we want to send to TicketControl
         [id]: {
           names: names,
           location: location,
