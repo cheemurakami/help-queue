@@ -3,10 +3,12 @@ import ReactDOM from 'react-dom';
 import App from './components/App';
 import * as serviceWorker from './serviceWorker';
 import { createStore } from 'redux';
-import reducer from './reducers/ticket-list-reducer';
+// import reducer from './reducers/ticket-list-reducer';
+import rootReducer from './reducers/index';
 import { Provider } from 'react-redux';
 
-const store = createStore(reducer);
+// const store = createStore(reducer);
+const store = createStore(rootReducer);
 
 //for testing
 store.subscribe(() =>
