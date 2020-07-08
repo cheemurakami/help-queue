@@ -17,7 +17,7 @@ store.subscribe(() =>
 );
 ```
 
-#### 3. Wrap Aoo with Provider
+#### 3. Wrap App with Provider
 ```
   <Provider store={store}>
     <App />
@@ -34,32 +34,8 @@ TicketControl = connect()(TicketControl);
 
 export default TicketControl;
 ```
-#### 5. Write Reducers in `src/reducers/ticket-list-reducer.js`
-```
-export default (state = {}, action) => {
-  //state = {}  初期値, action  viewから来た
-  const { names, location, issue, id } = action;
-  switch (action.type) {
-  case 'ADD_TICKET':
-    return Object.assign({}, state, {
-      [id]: {
-        names: names,
-        location: location,
-        issue: issue,
-        id: id
-      }
-    });
-  case 'DELETE_TICKET':
-    const newState = { ...state };
-    delete newState[id];
-    return newState;
-  default:
-    return state;
-  }
-};
-```
 
-3. Write tests in  `src/__tests__/ticket-list-reducer.test.js`, Note that `expect(ticketListReducer({}, { type: null })).toEqual({});` ticketListReducer takes 2 arguments, 1) current state, 2) action that will be applied to the current state.
+#### 5. Write tests in  `src/__tests__/ticket-list-reducer.test.js`, Note that `expect(ticketListReducer({}, { type: null })).toEqual({});` ticketListReducer takes 2 arguments, 1) current state, 2) action that will be applied to the current state.
 ```
 import ticketListReducer from '../../reducers/ticket-list-reducer';
 
@@ -122,4 +98,67 @@ describe('ticketListReducer', () => {
   });
 
 });
+```
+
+#### 6. Write Reducers for testing in `src/reducers/ticket-list-reducer.js`
+```
+export default (state = {}, action) => {
+  //state = {}  初期値, action  viewから来た
+  const { names, location, issue, id } = action;
+  switch (action.type) {
+  case 'ADD_TICKET':
+    return Object.assign({}, state, {
+      [id]: {
+        names: names,
+        location: location,
+        issue: issue,
+        id: id
+      }
+    });
+  case 'DELETE_TICKET':
+    const newState = { ...state };
+    delete newState[id];
+    return newState;
+  default:
+    return state;
+  }
+};
+```
+
+#### 7. In `TicketControl.js` can dispatch action and write! (type: 'ADD_TICKET')
+```
+handleAddingNewTicketToList = (newTicket) => {
+    const { dispatch } = this.props;
+    const { id, names, location, issue } = newTicket;
+    const action = {
+      type: 'ADD_TICKET',
+      id: id,
+      names: names,
+      location: location,
+      issue: issue,
+    }
+    dispatch(action);
+    this.setState({formVisibleOnPage: false});
+  }
+```
+#### 8. In `TicketControl.js` use mapStateToProps to use the state we created in reducer, give it a name so we can use it in render!
+```
+const mapStateToProps = state => {
+  return {
+    masterTicketList: state
+  }
+}
+
+TicketControl = connect(mapStateToProps)(TicketControl);
+```
+//Reducerから来たobjにmasterTicketListと名前をつけてあげる
+```
+TicketControl.propTypes = {
+  masterTicketList: PropTypes.object
+};
+```
+
+#### 9. In render, can use `this.props,masterTicketList`
+```
+currentlyVisibleState = <TicketList ticketList={this.props.masterTicketList} onTicketSelection={this.handleChangingSelectedTicket} />;
 ```
