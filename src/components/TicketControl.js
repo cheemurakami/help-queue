@@ -19,6 +19,32 @@ class TicketControl extends React.Component {
     this.handleClick = this.handleClick.bind(this); 
   }
 
+  componentDidMount() {
+    this.waitTimeUpdateTimer = setInterval(() =>
+      this.updateTicketElapsedWaitTime(),
+    1000
+    );
+  }
+
+  componentDidUpdate() {
+    console.log("component updated!");
+  }
+
+  componentWillUnmount(){
+    console.log("component unmounted!");
+    clearInterval(this.waitTimeUpdateTimer);
+  }
+
+  updateTicketElapsedWaitTime = () => {
+    const { dispatch } = this.props;
+  Object.values(this.props.masterTicketList).forEach(ticket => {
+    const newFormattedWaitTime = ticket.timeOpen.fromNow(true);
+    const action = a.updateTime(ticket.id, newFormattedWaitTime);
+    dispatch(action);
+  });
+  }
+
+
   handleClick = () => {
     if (this.state.selectedTicket != null) {
       this.setState({
@@ -41,7 +67,7 @@ class TicketControl extends React.Component {
 
   handleAddingNewTicketToList = (newTicket) => {
     const { dispatch } = this.props;
-    const { id, names, location, issue } = newTicket;
+    // const { id, names, location, issue } = newTicket;
     // const action = {
     //   type: 'ADD_TICKET',
     //   id: id,
@@ -83,7 +109,7 @@ class TicketControl extends React.Component {
 
   handleEditingTicketInList = (ticketToEdit) => {
     const { dispatch } = this.props;
-    const { id, names, location, issue } = ticketToEdit;
+    // const { id, names, location, issue } = ticketToEdit;
     // const action = {
     //   type: 'ADD_TICKET',
     //   id: id,

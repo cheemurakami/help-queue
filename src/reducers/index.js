@@ -8,3 +8,8 @@ const rootReducer = combineReducers({
 });
 
 export default rootReducer;
+
+// {
+//   formVisibleOnPage: true,
+//   masterTicketList: {"1": {...}}
+// }
