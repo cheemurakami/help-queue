@@ -1,28 +1,28 @@
-import React from 'react';
-import NewTicketForm from './NewTicketForm';
-import TicketList from './TicketList';
-import TicketDetail from './TicketDetail';
-import { connect } from 'react-redux';
-import EditTicketForm from './EditTicketForm';
+import React from "react";
+import NewTicketForm from "./NewTicketForm";
+import TicketList from "./TicketList";
+import TicketDetail from "./TicketDetail";
+import { connect } from "react-redux";
+import EditTicketForm from "./EditTicketForm";
 import PropTypes from "prop-types";
-import * as a from './../actions';
-
+import * as a from "./../actions";
+import { withFirestore } from "react-redux-firebase";
+import { useFirestore } from "react-redux-firebase";
 
 class TicketControl extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      // formVisibleOnPage: false,
       selectedTicket: null,
-      editing: false
+      editing: false,
     };
-    this.handleClick = this.handleClick.bind(this); 
+    this.handleClick = this.handleClick.bind(this);
   }
 
   componentDidMount() {
-    this.waitTimeUpdateTimer = setInterval(() =>
-      this.updateTicketElapsedWaitTime(),
-    1000
+    this.waitTimeUpdateTimer = setInterval(
+      () => this.updateTicketElapsedWaitTime(),
+      10000
     );
   }
 
@@ -30,142 +30,126 @@ class TicketControl extends React.Component {
     console.log("component updated!");
   }
 
-  componentWillUnmount(){
+  componentWillUnmount() {
     console.log("component unmounted!");
     clearInterval(this.waitTimeUpdateTimer);
   }
 
   updateTicketElapsedWaitTime = () => {
-    const { dispatch } = this.props;
-  Object.values(this.props.masterTicketList).forEach(ticket => {
-    const newFormattedWaitTime = ticket.timeOpen.fromNow(true);
-    const action = a.updateTime(ticket.id, newFormattedWaitTime);
-    dispatch(action);
-  });
-  }
-
+    const now = this.props.firestore.FieldValue.serverTimestamp();
+    ;
+    console.log("NOW " + now)
+    this.props.firestore
+      .get({ collection: "tickets" })
+      .then(function (querySnapshot) {
+        querySnapshot.forEach(function (doc) {
+          console.log("TIME OPEN " + doc.data().timeOpen);
+          console.log("UPDATED TIME " + (doc.data().timeOpen.fromDate(now)));
+          // this.props.firestore.update({collection: 'tickets', doc: doc.id}, {formattedTime: now() - doc.timeOpen})
+        });
+      });
+  };
 
   handleClick = () => {
     if (this.state.selectedTicket != null) {
       this.setState({
         // formVisibleOnPage: false,
         selectedTicket: null,
-        editing: false
+        editing: false,
       });
     } else {
-      // this.setState(prevState => ({
-      //   formVisibleOnPage: !prevState.formVisibleOnPage,
-      // }));
       const { dispatch } = this.props;
-      // const action = {
-      //   type: 'TOGGLE_FORM'
-      // }
       const action = a.toggleForm();
       dispatch(action);
     }
-  }
+  };
 
-  handleAddingNewTicketToList = (newTicket) => {
+  handleAddingNewTicketToList = () => {
     const { dispatch } = this.props;
-    // const { id, names, location, issue } = newTicket;
-    // const action = {
-    //   type: 'ADD_TICKET',
-    //   id: id,
-    //   names: names,
-    //   location: location,
-    //   issue: issue,
-    // }
-    const action = a.addTicket(newTicket);
+    const action = a.toggleForm();
     dispatch(action);
-    // this.setState({formVisibleOnPage: false});
-    // const action2 = {
-    //   type: 'TOGGLE_FORM'
-    // }
-    const action2 = a.toggleForm();
-    dispatch(action2);
-  } //[]updating with a new ticket
+  };
 
   //selected ticket
   handleChangingSelectedTicket = (id) => {
-    const selectedTicket = this.props.masterTicketList[id];
-    this.setState({selectedTicket: selectedTicket});
-  }
+    this.props.firestore
+      .get({ collection: "tickets", doc: id })
+      .then((ticket) => {
+        const firestoreTicket = {
+          names: ticket.get("names"),
+          location: ticket.get("location"),
+          issue: ticket.get("issue"),
+          id: ticket.id,
+        };
+        this.setState({ selectedTicket: firestoreTicket });
+      });
+  };
 
   handleDeletingTicket = (id) => {
-    const { dispatch } = this.props;
-    // const action = {
-    //   type: 'DELETE_TICKET',
-    //   id: id
-    // }
-    const action = a.deleteTicket(id);
-    dispatch(action);
-    this.setState({selectedTicket: null});
-  }
+    this.props.firestore.delete({ collection: "tickets", doc: id });
+    this.setState({ selectedTicket: null });
+  };
 
   handleEditClick = () => {
     console.log("handleEditClick reached!");
-    this.setState({editing: true});
-  }
+    this.setState({ editing: true });
+  };
 
-  handleEditingTicketInList = (ticketToEdit) => {
-    const { dispatch } = this.props;
-    // const { id, names, location, issue } = ticketToEdit;
-    // const action = {
-    //   type: 'ADD_TICKET',
-    //   id: id,
-    //   names: names,
-    //   location: location,
-    //   issue: issue,
-    // }
-    const action = a.addTicket(ticketToEdit);
-    dispatch(action);
+  handleEditingTicketInList = () => {
     this.setState({
       editing: false,
-      selectedTicket: null
+      selectedTicket: null,
     });
-  }
+  };
 
-  render(){
+  render() {
     let currentlyVisibleState = null;
     let buttonText = null;
 
-    if (this.state.editing ) {      
-      currentlyVisibleState = <EditTicketForm ticket = {this.state.selectedTicket} onEditTicket = {this.handleEditingTicketInList} />
+    if (this.state.editing) {
+      currentlyVisibleState = (
+        <EditTicketForm
+          ticket={this.state.selectedTicket}
+          onEditTicket={this.handleEditingTicketInList}
+        />
+      );
       buttonText = "Return to Ticket List";
-    }
-    else if (this.state.selectedTicket != null) {
-      currentlyVisibleState = <TicketDetail ticket = {this.state.selectedTicket} onClickingDelete = {this.handleDeletingTicket} onClickingEdit = {this.handleEditClick}/>
+    } else if (this.state.selectedTicket != null) {
+      currentlyVisibleState = (
+        <TicketDetail
+          ticket={this.state.selectedTicket}
+          onClickingDelete={this.handleDeletingTicket}
+          onClickingEdit={this.handleEditClick}
+        />
+      );
       buttonText = "Return to Ticket List";
       // While our TicketDetail component only takes placeholder data, we will eventually be passing the value of selectedTicket as a prop.
-    }
-    else if (this.props.formVisibleOnPage) {
-      currentlyVisibleState = <NewTicketForm onNewTicketCreation={this.handleAddingNewTicketToList} />
-      buttonText = "Return to Ticket List"; 
+    } else if (this.props.formVisibleOnPage) {
+      currentlyVisibleState = (
+        <NewTicketForm onNewTicketCreation={this.handleAddingNewTicketToList} />
+      );
+      buttonText = "Return to Ticket List";
     } else {
-      currentlyVisibleState = <TicketList ticketList={this.props.masterTicketList} onTicketSelection={this.handleChangingSelectedTicket}/>; //prop ni assign shita
-      buttonText = "Add Ticket";     
-
+      currentlyVisibleState = (
+        <TicketList onTicketSelection={this.handleChangingSelectedTicket} />
+      ); //prop ni assign shita
+      buttonText = "Add Ticket";
     }
     return (
       <React.Fragment>
         {currentlyVisibleState}
-        <button onClick={this.handleClick}>{buttonText}</button> { /* new code */ }
+        <button onClick={this.handleClick}>{buttonText}</button>{" "}
+        {/* new code */}
       </React.Fragment>
     );
-  } 
-}
-
-const mapStateToProps = state => {
-  console.log(state);
-  console.log(state.masterTicketList)
-  return {
-    masterTicketList: state.masterTicketList,
-    formVisibleOnPage: state.formVisibleOnPage
   }
 }
+
+const mapStateToProps = (state) => {
+  return {
+    formVisibleOnPage: state.formVisibleOnPage,
+  };
+};
 TicketControl = connect(mapStateToProps)(TicketControl);
 
-TicketControl.propTypes = {
-  masterTicketList: PropTypes.object
-};
-export default TicketControl;
+export default withFirestore(TicketControl);

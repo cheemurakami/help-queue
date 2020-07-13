@@ -1,46 +1,33 @@
 import React from "react";
-import { v4 } from 'uuid';
 import PropTypes from "prop-types";
 import ReusableForm from "./ReusableForm";
-import Moment from 'moment';
+import { useFirestore } from 'react-redux-firebase';
+
 
 function NewTicketForm(props){
-  function handleNewTicketFormSubmission(event) {
+  
+  const firestore = useFirestore();
+
+  function addTicketToFirestore(event) {
     event.preventDefault();
-    props.onNewTicketCreation({
-      names: event.target.names.value,
-      location: event.target.location.value, 
-      issue: event.target.issue.value,
-      id: v4(),
-      timeOpen: new Moment(),
-      formattedWaitTime: new Moment().fromNow(true)
-    });
-    // console.log(event.target.names.value);
-    // console.log(event.target.location.value);
-    // console.log(event.target.issue.value);
+    props.onNewTicketCreation();
+    console.log(firestore.FieldValue.serverTimestamp())
+    return firestore.collection('tickets').add( //making a table?
+      {
+        names: event.target.names.value,
+        location: event.target.location.value, 
+        issue: event.target.issue.value,
+        timeOpen: firestore.FieldValue.serverTimestamp()
+      }
+    )
   }
 
 
   return (
     <React.Fragment>
-      {/* <form onSubmit={handleNewTicketFormSubmission}>
-        <input
-          type='text'
-          name='names'
-          placeholder='Pair Names' />
-          <br />
-        <input
-          type='text'
-          name='location'
-          placeholder='Location' />
-        <br />
-        <textarea
-          name='issue'
-          placeholder='Describe your issue.' />
-        <button type='submit'>Help!</button>
-      </form> */}
+      
     <ReusableForm 
-        formSubmissionHandler={handleNewTicketFormSubmission}
+        formSubmissionHandler={addTicketToFirestore}
         buttonText="Help!" />
     </React.Fragment>
   );
